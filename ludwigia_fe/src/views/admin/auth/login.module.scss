@@ -17,6 +17,8 @@
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     border-radius: 8px;
+    position: relative;
+    overflow: hidden;
 
     & .header > * {
         text-align: center;
@@ -34,5 +36,12 @@
             letter-spacing: 12px;
             margin-right: -16px;
         }
+    }
+
+    & .loading {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100%;
     }
 }

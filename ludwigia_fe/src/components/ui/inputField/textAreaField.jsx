@@ -12,7 +12,7 @@ import { CKEditorWrapper } from '~/components/themeMUI/customComponents';
 function TextAreaField(props) {
     const {
         form, name,
-        minHeight
+        minHeight, readOnly, placeholder
     } = props;
     const { formState } = form;
 
@@ -34,6 +34,12 @@ function TextAreaField(props) {
                                 const data = editor.getData();
                                 field.onChange(data)
                             }}
+                            disabled={readOnly}
+                            config={{
+                                isReadOnly: readOnly,
+                                placeholder: placeholder || ''
+                            }}
+                            onFocus={() => form.setFocus()}
                         />
                     </CKEditorWrapper>
                     {errorValidate && (

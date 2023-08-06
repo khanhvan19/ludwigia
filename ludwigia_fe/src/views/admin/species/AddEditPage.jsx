@@ -14,67 +14,59 @@ import RouterBreadcrumbs from '~/components/ui/Breadcrumbs';
 import AddEditForm from './AddEditForm';
 
 const BREADCRUMBS = [
-    { label: 'Trang chủ', link: '/admin/' },
-    { label: 'Loài thực vật', link: '/admin/species' }
+    { label: 'Trang chủ', link: '/administrator/' },
+    { label: 'Loài thực vật', link: '/administrator/species' }
 ];
 
 function AddEditSpecies() {
     const navigate = useNavigate();
     const { state } = useLocation();
+    const currentData = state?.data;
+    const mode = state?.mode;
 
     const initValue = {
         // General Infomation
-        genus_ref: state?.genus_ref || '',
-        sci_name: state?.sci_name || '',
-        author: state?.vie_name || '',
-        debut_year: state?.species || '',
-        family_description: state?.family_description || '',
-        avatar: state?.avatar?.link || '',
-        other_name: state?.othername || [{ name: '', reference: '' }],
-        vie_name: state?.vie_name || [{ name: '', reference: '' }],
+        genus_ref: currentData?.genus_ref._id || '',
+        sci_name: currentData?.sci_name || '',
+        author: currentData?.author || '',
+        debut_year: currentData?.debut_year || '',
+        avatar: currentData?.avatar || '',
+        other_name: currentData?.other_name || [{ name: '', reference: '' }],
+        vie_name: currentData?.vie_name || [{ name: '', reference: '' }],
+        family_description: currentData?.family_description || '',
         // Takhtanjan System
-        kingdom: state?.kingdom || { name: '', nomenclature: '', reference: '' },
-        division: state?.division || { name: '', nomenclature: '', reference: '' },
-        class: state?.class || { name: '', nomenclature: '', reference: '' },
-        order: state?.order || { name: '', nomenclature: '', reference: '' },
-        family: state?.family || { name: '', nomenclature: '', reference: '' },
-        genus: state?.genus || { name: '', nomenclature: '', reference: '' },
-        species: state?.species || { name: '', reference: '' },
+        takhtajan_system: {
+            kingdom: currentData?.takhtajan_system?.kingdom || { name: '', nomenclature: '', reference: '' },
+            division: currentData?.takhtajan_system?.division || { name: '', nomenclature: '', reference: '' },
+            layer: currentData?.takhtajan_system?.layer || { name: '', nomenclature: '', reference: '' },
+            order: currentData?.takhtajan_system?.order || { name: '', nomenclature: '', reference: '' },
+            family: currentData?.takhtajan_system?.family || { name: '', nomenclature: '', reference: '' },
+            genus: currentData?.takhtajan_system?.genus || { name: '', nomenclature: '', reference: '' },
+            species: currentData?.takhtajan_system?.species || { nomenclature: '', reference: '' }
+        },
         // Description
-        description: {
-            content: state?.description?.content || '',
-            images: state?.description?.images?.link || [{ link: '' }]
-        },
+        description_content: currentData?.description?.content || '',
+        description_images: currentData?.description?.images || [''],
         // Microsurgery
-        microsurgery: [{
-            image: state?.microsurgery?.image?.link || '',
-            caption: state?.microsurgery?.caption || '',
-            explains: state?.microsurgery?.explains || [{ content: '' }]
-        }],
+        microsurgerys: currentData?.microsurgerys || [{ image: '', caption: '', explains: [''] }],
         // Distribution
-        distribution: {
-            content: state?.distribution?.content || '',
-            image: state?.distribution?.image?.link || ''
-        },
+        distribution_content: currentData?.distribution?.content || '',
+        distribution_image: currentData?.distribution?.image || '',
         // Phytochemical
-        phytochemical: [{
-            bio_active: state?.bio_active || '',
-            bio_reference: state?.bio_reference || '',
-            chemical_group: state?.chemical_group || '',
-            segment: state?.segment || '',
-            physical_properties: state?.physical_properties || '',
-            spectrum: state?.spectrum || [],
-            chemical_structure: state?.chemical_structure || '',
-            pharma_effect: state?.pharma_effect || ''
+        phytochemicals: currentData?.phytochemicals || [{
+            bio_active: '',
+            bio_reference: '',
+            chemical_group: '',
+            segment: '',
+            physical_properties: '',
+            spectrum: [],
+            chemical_structure: '',
+            pharma_effect: ''
         }],
         // Benefits
-        benefit: state?.benefit || '',
+        benefits: currentData?.benefits || '',
         // References
-        references: [{
-            content: state?.reference?.content || '',
-            link: state?.reference?.link || '',
-            language: state?.reference?.language || 'en'
-        }]
+        references: currentData?.references || [{ content: '', link: '' }]
     }
 
     const validateSchema = Yup.object().shape({
@@ -87,11 +79,14 @@ function AddEditSpecies() {
             .required('Vui lòng không để trống trường này!'),
         debut_year: Yup.string().trim()
             .max(4, 'Vui lòng nhập năm đúng định dạng!'),
-        family_description: Yup.string().trim()
-            .required('Vui lòng không để trống trường này!'),
         avatar: Yup.mixed()
             .test('required', 'Vui lòng chọn hình ảnh tải lên!', value => {
+                if (typeof value === 'object' && value.fileUrl) return true;
                 return value && value.length;
+            })
+            .test('fileSize', 'Dung lượng hình ảnh vượt quá 5 MB!', value => {
+                if (typeof value === 'object' && value.fileUrl) return true;
+                return value && (value[0].size <= 5 * 1024 * 1024)
             }),
         other_name: Yup.array()
             .of(Yup.object().shape({
@@ -103,87 +98,94 @@ function AddEditSpecies() {
                 name: Yup.string().trim()
                     .required('Vui lòng không để trống trường này!')
             })),
+        family_description: Yup.string().trim()
+            .required('Vui lòng không để trống trường này!'),
         // Validate Takhtanjan System
-        kingdom: Yup.object().shape({
-            name: Yup.string().trim()
-                .required('Vui lòng không để trống trường này!'),
-            nomenclature: Yup.string().trim()
-                .required('Vui lòng không để trống trường này!')
-        }),
-        division: Yup.object().shape({
-            name: Yup.string().trim()
-                .required('Vui lòng không để trống trường này!'),
-            nomenclature: Yup.string().trim()
-                .required('Vui lòng không để trống trường này!')
-        }),
-        class: Yup.object().shape({
-            name: Yup.string().trim()
-                .required('Vui lòng không để trống trường này!'),
-            nomenclature: Yup.string().trim()
-                .required('Vui lòng không để trống trường này!')
-        }),
-        order: Yup.object().shape({
-            name: Yup.string().trim()
-                .required('Vui lòng không để trống trường này!'),
-            nomenclature: Yup.string().trim()
-                .required('Vui lòng không để trống trường này!')
-        }),
-        family: Yup.object().shape({
-            name: Yup.string().trim()
-                .required('Vui lòng không để trống trường này!'),
-            nomenclature: Yup.string().trim()
-                .required('Vui lòng không để trống trường này!')
-        }),
-        genus: Yup.object().shape({
-            name: Yup.string().trim()
-                .required('Vui lòng không để trống trường này!'),
-            nomenclature: Yup.string().trim()
-                .required('Vui lòng không để trống trường này!')
-        }),
-        species: Yup.object().shape({
-            name: Yup.string().trim()
-                .required('Vui lòng không để trống trường này!'),
-            nomenclature: Yup.string().trim()
-                .required('Vui lòng không để trống trường này!')
+        takhtajan_system: Yup.object().shape({
+            kingdom: Yup.object().shape({
+                name: Yup.string().trim()
+                    .required('Vui lòng không để trống trường này!'),
+                nomenclature: Yup.string().trim()
+                    .required('Vui lòng không để trống trường này!')
+            }),
+            division: Yup.object().shape({
+                name: Yup.string().trim()
+                    .required('Vui lòng không để trống trường này!'),
+                nomenclature: Yup.string().trim()
+                    .required('Vui lòng không để trống trường này!')
+            }),
+            layer: Yup.object().shape({
+                name: Yup.string().trim()
+                    .required('Vui lòng không để trống trường này!'),
+                nomenclature: Yup.string().trim()
+                    .required('Vui lòng không để trống trường này!')
+            }),
+            order: Yup.object().shape({
+                name: Yup.string().trim()
+                    .required('Vui lòng không để trống trường này!'),
+                nomenclature: Yup.string().trim()
+                    .required('Vui lòng không để trống trường này!')
+            }),
+            family: Yup.object().shape({
+                name: Yup.string().trim()
+                    .required('Vui lòng không để trống trường này!'),
+                nomenclature: Yup.string().trim()
+                    .required('Vui lòng không để trống trường này!')
+            }),
+            genus: Yup.object().shape({
+                name: Yup.string().trim()
+                    .required('Vui lòng không để trống trường này!'),
+                nomenclature: Yup.string().trim()
+                    .required('Vui lòng không để trống trường này!')
+            }),
+            species: Yup.object().shape({
+                nomenclature: Yup.string().trim()
+                    .required('Vui lòng không để trống trường này!')
+            })
         }),
         // Validate Description
-        description: Yup.object().shape({
-            content: Yup.string().trim()
-                .required('Vui lòng không để trống trường này!'),
-            images: Yup.array()
-                .of(Yup.object().shape({
-                    link: Yup.mixed()
-                        .test('required', 'Vui lòng chọn hình ảnh tải lên!', value => {
-                            return value && value.length;
-                        })
-                }))
-        }),
+        description_content: Yup.string().trim()
+            .required('Vui lòng không để trống trường này!'),
+        description_images: Yup.array()
+            .of(Yup.mixed()
+                .test('required', 'Vui lòng chọn hình ảnh tải lên!', value => {
+                    if (typeof value === 'object' && value.fileUrl) return true;
+                    return value && value.length;
+                })
+                .test('fileSize', 'Dung lượng hình ảnh vượt quá 5 MB!', value => {
+                    if (typeof value === 'object' && value.fileUrl) return true;
+                    return value && (value[0].size <= 5 * 1024 * 1024)
+                })
+            ),
         // Validation Microsurgery
-        microsurgery: Yup.array()
+        microsurgerys: Yup.array()
             .of(Yup.object().shape({
                 image: Yup.mixed()
                     .test('required', 'Vui lòng chọn hình ảnh tải lên!', value => {
+                        if (typeof value === 'object' && value.fileUrl) return true;
                         return value && value.length;
+                    })
+                    .test('fileSize', 'Dung lượng hình ảnh vượt quá 5 MB!', value => {
+                        if (typeof value === 'object' && value.fileUrl) return true;
+                        return value && (value[0].size <= 5 * 1024 * 1024)
                     }),
                 caption: Yup.string().trim()
                     .required('Vui lòng không để trống trường này!'),
-                explains: Yup.array()
-                    .of(Yup.object().shape({
-                        content: Yup.string().trim()
-                            .required('Vui lòng không để trống trường này!'),
-                    }))
             })),
         // Validation Distribution
-        distribution: Yup.object().shape({
-            content: Yup.string().trim()
-                .required('Vui lòng không để trống trường này!'),
-            image: Yup.mixed()
-                .test('required', 'Vui lòng chọn hình ảnh tải lên!', value => {
-                    return value && value.length;
-                })
-        }),
+        distribution_content: Yup.string().trim()
+            .required('Vui lòng không để trống trường này!'),
+        distribution_image: Yup.mixed()
+            .test('required', 'Vui lòng chọn hình ảnh tải lên!', value => {
+                if (typeof value === 'object' && value.fileUrl) return true;
+                return value && value.length;
+            })
+            .test('fileSize', 'Dung lượng hình ảnh vượt quá 5 MB!', value => {
+                if (typeof value === 'object' && value.fileUrl) return true;
+                return value && (value[0].size <= 5 * 1024 * 1024)
+            }),
         // Validate Phytochemical
-        phytochemical: Yup.array()
+        phytochemicals: Yup.array()
             .of(Yup.object().shape({
                 bio_active: Yup.string().trim()
                     .required('Vui lòng không để trống trường này!'),
@@ -196,12 +198,17 @@ function AddEditSpecies() {
                     .min(1, 'Vui lòng không để trống trường này!'),
                 chemical_structure: Yup.mixed()
                     .test('required', 'Vui lòng chọn hình ảnh tải lên!', value => {
+                        if (typeof value === 'object' && value.fileUrl) return true;
                         return value && value.length;
+                    })
+                    .test('fileSize', 'Dung lượng hình ảnh vượt quá 5 MB!', value => {
+                        if (typeof value === 'object' && value.fileUrl) return true;
+                        return value && (value[0].size <= 5 * 1024 * 1024)
                     }),
                 pharma_effect: Yup.string().trim().trim()
             })),
         // Validate Benefits
-        benefit: Yup.string().trim()
+        benefits: Yup.string().trim()
             .required('Vui lòng không để trống trường này!'),
         // Validate References
         references: Yup.array()
@@ -209,10 +216,7 @@ function AddEditSpecies() {
                 content: Yup.string().trim()
                     .required('Vui lòng không để trống trường này!'),
                 link: Yup.string().trim()
-                    .required('Vui lòng không để trống trường này!'),
-                language: Yup.string().trim()
-                    .required('Vui lòng chọn một trong các lựa chọn!')
-
+                    .url('Vui lòng nhập đúng định dạng một URL!')
             }))
     })
 
@@ -221,14 +225,21 @@ function AddEditSpecies() {
             <Box className="flex-between" alignItems="flex-end">
                 <Box>
                     <Typography variant="h5" fontWeight="700" gutterBottom>
-                        {(state == null) ? 'Thêm Loài thực vật' : 'Chỉnh sửa Loài thực vật'}
+                        {(currentData == null)
+                            ? 'Thêm Loài thực vật'
+                            : (mode === 'edit')
+                                ? 'Chỉnh sửa Loài thực vật'
+                                : 'Chi tiết Loài thực vật'
+                        }
                     </Typography>
                     <RouterBreadcrumbs
                         prevLink={BREADCRUMBS}
                         homeIcon={<Speed />}
-                        currentPage={(state == null)
+                        currentPage={(currentData == null)
                             ? 'Thêm Loài thực vật'
-                            : 'Chỉnh sửa Loài thực vật'
+                            : (mode === 'edit')
+                                ? 'Chỉnh sửa Loài thực vật'
+                                : 'Chi tiết Loài thực vật'
                         }
                     />
                 </Box>
@@ -237,7 +248,7 @@ function AddEditSpecies() {
                         color='cancel'
                         variant="contained"
                         startIcon={<ArrowBackOutlined />}
-                        onClick={() => navigate('/admin/species')}
+                        onClick={() => navigate('/administrator/species')}
                     >
                         Trở lại
                     </Button>
@@ -247,7 +258,8 @@ function AddEditSpecies() {
                 <AddEditForm
                     initValue={initValue}
                     validateSchema={validateSchema}
-                    editItemId={state}
+                    editItemId={currentData?._id}
+                    readOnlyMode={mode === 'readOnly'}
                 />
             </Paper>
         </Fragment>

@@ -1,57 +1,35 @@
+import { Link } from 'react-router-dom';
+import { Fragment } from 'react';
+
 import Box from '@mui/material/Box';
+import { blue } from '@mui/material/colors';
+
 import HeadContent from './HeadContent';
 
-function References() {
+function References({ data }) {
     return (
         <Box>
             <HeadContent>Tài liệu tham khảo</HeadContent>
-            <Box>
-                Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the
-                industry standard dummy text ever since the 1500s, when an unknown printer took a galley of type and
-                scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap
-                into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the
-                release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing
-                software like Aldus PageMaker including versions of Lorem Ipsum. Lorem Ipsum is simply dummy text of the
-                printing and typesetting industry. Lorem Ipsum has been the industry standard dummy text ever since the
-                1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It
-                has survived not only five centuries, but also the leap into electronic typesetting, remaining
-                essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing
-                Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including
-                versions of Lorem Ipsum. Lorem Ipsum is simply dummy text of the printing and typesetting industry.
-                Lorem Ipsum has been the industry standard dummy text ever since the 1500s, when an unknown printer took
-                a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries,
-                but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in
-                the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with
-                desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum. Lorem Ipsum is
-                simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry standard
-                dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make
-                a type specimen book. It has survived not only five centuries, but also the leap into electronic
-                typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of
-                Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like
-                Aldus PageMaker including versions of Lorem Ipsum.
-                Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the
-                industry standard dummy text ever since the 1500s, when an unknown printer took a galley of type and
-                scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap
-                into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the
-                release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing
-                software like Aldus PageMaker including versions of Lorem Ipsum. Lorem Ipsum is simply dummy text of the
-                printing and typesetting industry. Lorem Ipsum has been the industry standard dummy text ever since the
-                1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It
-                has survived not only five centuries, but also the leap into electronic typesetting, remaining
-                essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing
-                Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including
-                versions of Lorem Ipsum. Lorem Ipsum is simply dummy text of the printing and typesetting industry.
-                Lorem Ipsum has been the industry standard dummy text ever since the 1500s, when an unknown printer took
-                a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries,
-                but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in
-                the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with
-                desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum. Lorem Ipsum is
-                simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry standard
-                dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make
-                a type specimen book. It has survived not only five centuries, but also the leap into electronic
-                typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of
-                Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like
-                Aldus PageMaker including versions of Lorem Ipsum.
+            <Box component='ol' pl={6}>
+                {data.references.map((item, idx) => (
+                    <Box component='li' key={idx} pl={2} mb={1.5}>
+                        {item.link !== '' ? (
+                            <Box
+                                component={Link} to={item.link} target='_blank'
+                                sx={{
+                                    '&:hover': {
+                                        color: blue[900],
+                                        textDecoration: 'underline'
+                                    }
+                                }}
+                            >
+                                {item.content}
+                            </Box>
+                        ) : (
+                            <Fragment>{item.content}</Fragment>
+                        )}
+                    </Box>
+                ))}
             </Box>
         </Box>
     );

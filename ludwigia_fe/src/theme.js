@@ -1,5 +1,5 @@
 import { experimental_extendTheme as extendTheme } from '@mui/material/styles';
-import { grey, orange, teal, yellow } from '@mui/material/colors';
+import { blue, grey, orange, teal, yellow } from '@mui/material/colors';
 
 const theme = extendTheme({
     colorSchemes: {
@@ -17,7 +17,7 @@ const theme = extendTheme({
                     active1: teal[500],
                     darkActive1: teal[900],
                     active2: orange[300],
-                    sidebar: '#b8c7ce'
+                    sidebar: '#b8c7ce',
                 },
                 background: {
                     header: teal[100],

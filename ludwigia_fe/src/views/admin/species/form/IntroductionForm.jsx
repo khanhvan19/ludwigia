@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { useFieldArray } from 'react-hook-form';
 
 import Box from '@mui/material/Box';
@@ -16,12 +15,7 @@ import ImageField from '~/components/ui/inputField/ImageField';
 import InputField from '~/components/ui/inputField/InputField';
 import SelectField from '~/components/ui/inputField/SelectField';
 
-import axiosPublic from '~/utils/axiosPublic';
-
-function IntroductionForm({ form }) {
-    const [genusList, setGenusList] = useState([])
-    const [genusOption, setGenusOption] = useState([])
-
+function IntroductionForm({ form, genusOptions, readOnlyMode }) {
     const otherNameForm = useFieldArray({
         name: 'other_name',
         control: form.control
@@ -32,26 +26,15 @@ function IntroductionForm({ form }) {
         control: form.control
     })
 
-    useEffect(() => {
-        axiosPublic
-            .get('/genus/')
-            .then((res) => {
-                setGenusList(res)
-                var options = res.map(
-                    ({ _id: value, sci_name: label }) => ({ value, label })
-                );
-                setGenusOption(options)
-            })
-            .catch((err) => console.log(err))
-    }, [])
-
     return (
         <Box>
             <Grid container spacing={2}>
                 <Grid xs={12}>
                     <Box display='flex' alignItems='center'>
-                        <DashboardOutlined sx={{ mr: .75 }} />
-                        <Typography fontWeight={600} fontStyle='italic'>Thông tin chung:</Typography>
+                        <DashboardOutlined sx={{ mr: .75 }} fontSize='small' />
+                        <Typography fontSize={15} fontWeight={500} fontStyle='italic'>
+                            Thông tin chung:
+                        </Typography>
                     </Box>
                 </Grid>
                 <Grid xs={6} container>
@@ -59,8 +42,9 @@ function IntroductionForm({ form }) {
                         <SelectField
                             form={form}
                             name='genus_ref'
-                            options={genusOption}
+                            options={genusOptions}
                             label='Loài thuộc Chi'
+                            readOnly={readOnlyMode}
                         />
                     </Grid>
                     <Grid xs={12}>
@@ -68,6 +52,7 @@ function IntroductionForm({ form }) {
                             form={form}
                             name='sci_name'
                             label='Tên khoa học'
+                            readOnly={readOnlyMode}
                         />
                     </Grid>
                     <Grid xs={8}>
@@ -75,6 +60,7 @@ function IntroductionForm({ form }) {
                             form={form}
                             name='author'
                             label='Tác giả mô tả'
+                            readOnly={readOnlyMode}
                         />
                     </Grid>
                     <Grid xs={4}>
@@ -83,14 +69,16 @@ function IntroductionForm({ form }) {
                             name='debut_year'
                             type='number'
                             label='Năm mô tả'
+                            readOnly={readOnlyMode}
                         />
                     </Grid>
                     <Grid xs={12}>
                         <InputField
                             form={form}
                             name='family_description'
-                            label='Mô tả về Họ'
+                            label='Mô tả Họ của Loài'
                             multiline={true}
+                            readOnly={readOnlyMode}
                         />
                     </Grid>
                 </Grid>
@@ -100,13 +88,16 @@ function IntroductionForm({ form }) {
                         name='avatar'
                         label='Hình ảnh đại diện'
                         height='100%'
+                        disabled={readOnlyMode}
                     />
                 </Grid>
                 <Grid xs={6} container flexDirection='column' alignItems='flex-start'>
                     <Grid xs={12}>
                         <Box display='flex' alignItems='center'>
-                            <DashboardCustomizeOutlined sx={{ mr: .75 }} />
-                            <Typography fontWeight={600} fontStyle='italic'>Tên khoa học khác:</Typography>
+                            <DashboardCustomizeOutlined sx={{ mr: .75 }} fontSize='small' />
+                            <Typography fontSize={15} fontWeight={500} fontStyle='italic'>
+                                Tên khoa học khác:
+                            </Typography>
                         </Box>
                     </Grid>
                     {otherNameForm.fields.map((field, index) => (
@@ -116,36 +107,43 @@ function IntroductionForm({ form }) {
                                     form={form}
                                     name={`other_name.${index}.name`}
                                     label='Tên khoa học'
+                                    readOnly={readOnlyMode}
                                 />
                             </Grid>
-                            <Grid xs={3} pr={0}>
+                            <Grid xs={3}>
                                 <InputField
                                     form={form}
+                                    type='number'
                                     name={`other_name.${index}.reference`}
                                     label='TLTK số'
+                                    readOnly={readOnlyMode}
                                 />
                             </Grid>
-                            {index == 0 ? (
-                                <Grid className='flex-center' p={0}>
-                                    <Tooltip title='Thêm một tên khoa học khác' arrow>
-                                        <IconButton
-                                            color='primary'
-                                            onClick={() => otherNameForm.append({ name: '', reference: '' })}
-                                        >
-                                            <AddCircleTwoTone fontSize='large' />
-                                        </IconButton>
-                                    </Tooltip>
-                                </Grid>
-                            ) : (
-                                <Grid className='flex-center' p={0}>
-                                    <Tooltip title='Xóa tên này' arrow>
-                                        <IconButton
-                                            color='error'
-                                            onClick={() => otherNameForm.remove(index)}
-                                        >
-                                            <RemoveCircleTwoTone fontSize='large' />
-                                        </IconButton>
-                                    </Tooltip>
+                            {!readOnlyMode && (
+                                <Grid pr={0} pl={0.5} py={1.25}>
+                                    {index == 0 ? (
+                                        <Tooltip title='Thêm một tên khoa học khác' arrow>
+                                            <span>
+                                                <IconButton
+                                                    color='primary' edge='start'
+                                                    onClick={() => otherNameForm.append({ name: '', reference: '' })}
+                                                >
+                                                    <AddCircleTwoTone fontSize='large' />
+                                                </IconButton>
+                                            </span>
+                                        </Tooltip>
+                                    ) : (
+                                        <Tooltip title='Xóa tên này' arrow>
+                                            <span>
+                                                <IconButton
+                                                    color='error' edge='start'
+                                                    onClick={() => otherNameForm.remove(index)}
+                                                >
+                                                    <RemoveCircleTwoTone fontSize='large' />
+                                                </IconButton>
+                                            </span>
+                                        </Tooltip>
+                                    )}
                                 </Grid>
                             )}
                         </Grid>
@@ -154,8 +152,10 @@ function IntroductionForm({ form }) {
                 <Grid xs={6} container flexDirection='column' alignItems='flex-start'>
                     <Grid xs={12}>
                         <Box display='flex' alignItems='center'>
-                            <DashboardCustomizeOutlined sx={{ mr: .75 }} />
-                            <Typography fontWeight={600} fontStyle='italic'>Tên tiếng Việt:</Typography>
+                            <DashboardCustomizeOutlined sx={{ mr: .75 }} fontSize='small' />
+                            <Typography fontSize={15} fontWeight={500} fontStyle='italic'>
+                                Tên tiếng Việt:
+                            </Typography>
                         </Box>
                     </Grid>
                     {vieNameForm.fields.map((field, index) => (
@@ -165,36 +165,43 @@ function IntroductionForm({ form }) {
                                     form={form}
                                     name={`vie_name.${index}.name`}
                                     label='Tên tiếng Việt'
+                                    readOnly={readOnlyMode}
                                 />
                             </Grid>
-                            <Grid xs={3} pr={0}>
+                            <Grid xs={3}>
                                 <InputField
                                     form={form}
+                                    type='number'
                                     name={`vie_name.${index}.reference`}
                                     label='TLTK số'
+                                    readOnly={readOnlyMode}
                                 />
                             </Grid>
-                            {index == 0 ? (
-                                <Grid className='flex-center' p={0}>
-                                    <Tooltip title='Thêm một tên tiếng Việt' arrow>
-                                        <IconButton
-                                            color='primary'
-                                            onClick={() => vieNameForm.append({ name: '', reference: '' })}
-                                        >
-                                            <AddCircleTwoTone fontSize='large' />
-                                        </IconButton>
-                                    </Tooltip>
-                                </Grid>
-                            ) : (
-                                <Grid className='flex-center' p={0}>
-                                    <Tooltip title='Xóa tên này' arrow>
-                                        <IconButton
-                                            color='error'
-                                            onClick={() => vieNameForm.remove(index)}
-                                        >
-                                            <RemoveCircleTwoTone fontSize='large' />
-                                        </IconButton>
-                                    </Tooltip>
+                            {!readOnlyMode && (
+                                <Grid pr={0} pl={0.5} py={1.25}>
+                                    {index == 0 ? (
+                                        <Tooltip title='Thêm một tên tiếng Việt' arrow>
+                                            <span>
+                                                <IconButton
+                                                    color='primary'edge='start'
+                                                    onClick={() => vieNameForm.append({ name: '', reference: '' })}
+                                                >
+                                                    <AddCircleTwoTone fontSize='large' />
+                                                </IconButton>
+                                            </span>
+                                        </Tooltip>
+                                    ) : (
+                                        <Tooltip title='Xóa tên này' arrow>
+                                            <span>
+                                                <IconButton
+                                                    color='error' edge='start'
+                                                    onClick={() => vieNameForm.remove(index)}
+                                                >
+                                                    <RemoveCircleTwoTone fontSize='large' />
+                                                </IconButton>
+                                            </span>
+                                        </Tooltip>
+                                    )}
                                 </Grid>
                             )}
                         </Grid>
@@ -203,30 +210,36 @@ function IntroductionForm({ form }) {
                 <Grid xs={12} container>
                     <Grid xs={12}>
                         <Box display='flex' alignItems='center'>
-                            <DashboardOutlined sx={{ mr: .75 }} />
-                            <Typography fontWeight={600} fontStyle='italic'>Phân loại theo hệ thống Takhtajan:</Typography>
+                            <DashboardOutlined sx={{ mr: .75 }} fontSize='small' />
+                            <Typography fontSize={15} fontWeight={500} fontStyle='italic'>
+                                Phân loại theo hệ thống Takhtajan:
+                            </Typography>
                         </Box>
                     </Grid>
                     <Grid xs={12} container>
                         <Grid xs={5}>
                             <InputField
                                 form={form}
-                                name='kingdom.name'
+                                name='takhtajan_system.kingdom.name'
                                 label='Thuộc giới'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                         <Grid xs={5}>
                             <InputField
                                 form={form}
-                                name='kingdom.nomenclature'
+                                name='takhtajan_system.kingdom.nomenclature'
                                 label='Danh pháp khoa học'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                         <Grid xs={2}>
                             <InputField
                                 form={form}
-                                name='kingdom.reference'
+                                type='number'
+                                name='takhtajan_system.kingdom.reference'
                                 label='TLTK số'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                     </Grid>
@@ -234,22 +247,26 @@ function IntroductionForm({ form }) {
                         <Grid xs={5}>
                             <InputField
                                 form={form}
-                                name='division.name'
-                                label='Thuộc ngành'
+                                name='takhtajan_system.division.name'
+                                label='Thuộc Ngành'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                         <Grid xs={5}>
                             <InputField
                                 form={form}
-                                name='division.nomenclature'
+                                name='takhtajan_system.division.nomenclature'
                                 label='Danh pháp khoa học'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                         <Grid xs={2}>
                             <InputField
                                 form={form}
-                                name='division.reference'
+                                type='number'
+                                name='takhtajan_system.division.reference'
                                 label='TLTK số'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                     </Grid>
@@ -257,22 +274,26 @@ function IntroductionForm({ form }) {
                         <Grid xs={5}>
                             <InputField
                                 form={form}
-                                name='class.name'
-                                label='Thuộc lớp'
+                                name='takhtajan_system.layer.name'
+                                label='Thuộc Lớp'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                         <Grid xs={5}>
                             <InputField
                                 form={form}
-                                name='class.nomenclature'
+                                name='takhtajan_system.layer.nomenclature'
                                 label='Danh pháp khoa học'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                         <Grid xs={2}>
                             <InputField
                                 form={form}
-                                name='class.reference'
+                                type='number'
+                                name='takhtajan_system.layer.reference'
                                 label='TLTK số'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                     </Grid>
@@ -280,22 +301,26 @@ function IntroductionForm({ form }) {
                         <Grid xs={5}>
                             <InputField
                                 form={form}
-                                name='order.name'
-                                label='Thuộc bộ'
+                                name='takhtajan_system.order.name'
+                                label='Thuộc Bộ'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                         <Grid xs={5}>
                             <InputField
                                 form={form}
-                                name='order.nomenclature'
+                                name='takhtajan_system.order.nomenclature'
                                 label='Danh pháp khoa học'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                         <Grid xs={2}>
                             <InputField
                                 form={form}
-                                name='order.reference'
+                                type='number'
+                                name='takhtajan_system.order.reference'
                                 label='TLTK số'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                     </Grid>
@@ -303,22 +328,26 @@ function IntroductionForm({ form }) {
                         <Grid xs={5}>
                             <InputField
                                 form={form}
-                                name='family.name'
-                                label='Thuộc họ'
+                                name='takhtajan_system.family.name'
+                                label='Thuộc Họ'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                         <Grid xs={5}>
                             <InputField
                                 form={form}
-                                name='family.nomenclature'
+                                name='takhtajan_system.family.nomenclature'
                                 label='Danh pháp khoa học'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                         <Grid xs={2}>
                             <InputField
                                 form={form}
-                                name='family.reference'
+                                type='number'
+                                name='takhtajan_system.family.reference'
                                 label='TLTK số'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                     </Grid>
@@ -326,22 +355,26 @@ function IntroductionForm({ form }) {
                         <Grid xs={5}>
                             <InputField
                                 form={form}
-                                name='genus.name'
-                                label='Thuộc chi'
+                                name='takhtajan_system.genus.name'
+                                label='Thuộc Chi'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                         <Grid xs={5}>
                             <InputField
                                 form={form}
-                                name='genus.nomenclature'
+                                name='takhtajan_system.genus.nomenclature'
                                 label='Danh pháp khoa học'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                         <Grid xs={2}>
                             <InputField
                                 form={form}
-                                name='genus.reference'
+                                type='number'
+                                name='takhtajan_system.genus.reference'
                                 label='TLTK số'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                     </Grid>
@@ -349,15 +382,18 @@ function IntroductionForm({ form }) {
                         <Grid xs={10}>
                             <InputField
                                 form={form}
-                                name='species.name'
-                                label='Loài'
+                                name='takhtajan_system.species.nomenclature'
+                                label='Danh pháp khoa học của Loài'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                         <Grid xs={2}>
                             <InputField
                                 form={form}
-                                name='species.reference'
+                                type='number'
+                                name='takhtajan_system.species.reference'
                                 label='TLTK số'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
                     </Grid>

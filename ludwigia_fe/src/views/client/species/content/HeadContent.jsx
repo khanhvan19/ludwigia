@@ -8,7 +8,7 @@ function HeadContent({ children }) {
             bgcolor='background.accent1'
             textAlign='center'
             fontWeight={600}
-            mx={-3} mb={4} py={0.75}
+            mx={-3} mb={4} py={0.875}
         >
             {children}
         </Typography>

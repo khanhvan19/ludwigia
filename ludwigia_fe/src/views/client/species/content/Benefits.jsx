@@ -2,11 +2,10 @@ import Box from '@mui/material/Box';
 import HeadContent from './HeadContent';
 import StringHasQuote from '~/components/ui/StringHasQuote';
 
-function Distribution({ data }) {
-
+function Benefits({ data }) {
     return (
         <Box>
-            <HeadContent>Phân bố sinh thái</HeadContent>
+            <HeadContent>Bộ phận dùng và công dụng</HeadContent>
             <Box
                 textAlign='justify'
                 sx={{
@@ -15,19 +14,12 @@ function Distribution({ data }) {
                 }}
             >
                 <StringHasQuote
-                    htmlStr={data.distribution.content}
+                    htmlStr={data.benefits}
                     references={data.references}
                 />
             </Box>
-            {data.distribution.image && (
-                <Box
-                    component='img'
-                    src={data.distribution.image.fileUrl} alt=''
-                    width='100%' mt={3}
-                />
-            )}
         </Box>
     );
 }
 
-export default Distribution;
+export default Benefits;

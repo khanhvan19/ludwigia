@@ -22,7 +22,7 @@ const navLinks = [
 function ClientHeader() {
     return (
         <Container
-            maxWidth='xl'
+            maxWidth={false}
             component='header'
             className='flex-between'
             sx={{

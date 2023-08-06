@@ -1,39 +1,68 @@
-import { useState } from 'react';
-import mammoth from 'mammoth';
+import { Fragment } from 'react';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Speed from '@mui/icons-material/Speed';
+import RouterBreadcrumbs from '~/components/ui/Breadcrumbs';
 
-var keyWord = ['Tên khoa học', 'Tên khác', 'Tên tiếng Việt'];
-var indexKeyWord = [];
+import classNames from 'classnames/bind';
+import styles from './dashboard.module.scss';
+import { Link } from 'react-router-dom';
+const cx = classNames.bind(styles);
+
+const BREADCRUMBS = [{ label: 'Trang chủ', link: '/administrator/' }];
+
+
 function Dashboard() {
-    const [pdfContent, setPdfContent] = useState('');
-
-    const handleFileChange = async (event) => {
-        const file = event.target.files[0];
-        const fileReader = new FileReader();
-        fileReader.onload = function () {
-            mammoth
-                .extractRawText({ arrayBuffer: this.result })
-                .then(function (result) {
-                    result.value.split('\n').filter((e) => e.trim() !== '' && e.trim() !== '\t').forEach((element, index) => {
-                        keyWord.forEach((e) => {
-                            if (element.includes(e)) {
-                                indexKeyWord.push(index);
-                            }
-                        });
-                    });
-                    console.log(indexKeyWord);
-                    console.log(result.value.split('\n').filter((e) => e.trim() != ''));
-                    setPdfContent(result.value);
-                })
-                .done();
-        };
-        fileReader.readAsArrayBuffer(file);
-    };
-
     return (
-        <div>
-            <input type="file" onChange={handleFileChange} />
-            <div>{pdfContent}</div>
-        </div>
+        <Fragment>
+            <Box className="flex-between" alignItems="flex-end">
+                <Box>
+                    <Typography variant="h5" fontWeight="700" gutterBottom>
+                        Dashboard
+                    </Typography>
+                    <RouterBreadcrumbs prevLink={BREADCRUMBS} currentPage="Tổng quan" homeIcon={<Speed />} />
+                </Box>
+            </Box>
+            <Box>
+                <Typography variant='h5' fontWeight={700} align='center' my={4}>
+                    *Chức năng đang được phát triển
+                </Typography>
+                <div className={cx('gears', 'loading')}>
+                    <div className={cx('gear', 'one')}>
+                        <div className={cx('bar')}></div>
+                        <div className={cx('bar')}></div>
+                        <div className={cx('bar')}></div>
+                    </div>
+                    <div className={cx('gear', 'two')}>
+                        <div className={cx('bar')}></div>
+                        <div className={cx('bar')}></div>
+                        <div className={cx('bar')}></div>
+                    </div>
+                    <div className={cx('gear', 'three')}>
+                        <div className={cx('bar')}></div>
+                        <div className={cx('bar')}></div>
+                        <div className={cx('bar')}></div>
+                    </div>
+                </div>
+            </Box>
+            <Box mt={28}>
+                <Typography variant='h5' color='text.accent1' fontWeight={700} align='center' my={4}>
+                    Chức năng đã có:
+                </Typography>
+                <Box className='flex-center'>
+                    <Button variant='contained' component={Link} to='/administrator/user' sx={{ mr: 1 }}>
+                        Quản lý người dùng
+                    </Button>
+                    <Button variant='contained' component={Link} to='/administrator/genus' sx={{ mr: 1 }}>
+                        Quản lý Chi thực vật
+                    </Button>
+                    <Button variant='contained' component={Link} to='/administrator/species'>
+                        Quản lý Loài thực vật
+                    </Button>
+                </Box>
+            </Box>
+        </Fragment>
     );
 }
 

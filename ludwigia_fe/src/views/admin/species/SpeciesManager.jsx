@@ -21,6 +21,7 @@ import TableRow from '@mui/material/TableRow'
 import TableSortLabel from '@mui/material/TableSortLabel'
 import TextField from '@mui/material/TextField'
 import Tooltip from '@mui/material/Tooltip';
+import Skeleton from '@mui/material/Skeleton';
 
 import Speed from '@mui/icons-material/Speed';
 import PlaylistAdd from '@mui/icons-material/PlaylistAdd';
@@ -29,7 +30,9 @@ import Search from '@mui/icons-material/Search'
 import DeleteTwoTone from '@mui/icons-material/DeleteTwoTone';
 import VisibilityOffTwoTone from '@mui/icons-material/VisibilityOffTwoTone';
 import VisibilityTwoTone from '@mui/icons-material/VisibilityTwoTone';
+import DescriptionTwoTone from '@mui/icons-material/DescriptionTwoTone';
 
+import empty from '~/assets/images/empty.png'
 import useAxiosPrivate from '~/utils/axiosPrivate';
 import { getComparator, stableSort } from '~/utils/tableSort';
 import useDebounce from '~/hooks/useDebounce';
@@ -38,13 +41,14 @@ import { TOAST_STYLE } from '~/components/ui/customToastify';
 
 
 const BREADCRUMBS = [
-    { label: 'Trang chủ', link: '/admin/' },
-    { label: 'Loài thực vật', link: '/admin/species' }
+    { label: 'Trang chủ', link: '/administrator/' },
+    { label: 'Loài thực vật', link: '/administrator/species' }
 ];
 
 const TABLE_HEADER = [
     { label: 'Tên khoa học', sortBy: 'sci_name' },
-    { label: 'Người mô tả', sortBy: 'author' },
+    { label: 'Thuộc Chi ', sortBy: 'genus_ref' },
+    { label: 'Tác giả mô tả', sortBy: 'author' },
     { label: 'Năm mô tả', sortBy: 'debut_year' },
     { label: 'Ngày thêm', sortBy: 'createdAt' },
     { label: 'Trạng thái', sortBy: 'status' }
@@ -59,6 +63,7 @@ function SpeciesManager() {
     const [orderBy, setOrderBy] = useState('createdAt');
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [fetching, setFetching] = useState(true)
 
     const axiosPrivate = useAxiosPrivate()
     const navigate = useNavigate()
@@ -70,11 +75,14 @@ function SpeciesManager() {
         const controler = new AbortController();
 
         axiosPrivate
-            .get('/genus/admin-search', {
+            .get('/species/admin-search', {
                 params: { q: searchParam }
             })
-            .then((res) => setList(res))
-            .catch((err) => console.log(err));
+            .then((res) => {
+                setList(res)
+                setFetching(false)
+            })
+            .catch(() => navigate('/internal-server-error'));
 
         return () => {
             controler.abort();
@@ -156,7 +164,7 @@ function SpeciesManager() {
                     <Button
                         variant="contained"
                         startIcon={<PlaylistAdd />}
-                        onClick={() => navigate('/admin/species/add')}
+                        onClick={() => navigate('/administrator/species/add')}
                     >
                         Thêm mới
                     </Button>
@@ -200,69 +208,138 @@ function SpeciesManager() {
                                             </TableSortLabel>
                                         </TableCell>
                                     ))}
-                                    <TableCell colSpan={3} align="center">
+                                    <TableCell colSpan={4} align="center" sx={{ whiteSpace: 'nowrap' }}>
                                         Hành động
                                     </TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {list.length !== 0 && stableSort(list, getComparator(order, orderBy))
-                                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                    .map((row, idx) => {
-                                        return (
-                                            <TableRow hover key={idx}>
-                                                {/* <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                                                    <Box component='img' src={row.avatar.link} alt='' />
-                                                    <Marker mark={searchParam} options={{ className: 'highlighter' }}>
-                                                        {row.sci_name}
-                                                    </Marker>
+                                {list.length === 0
+                                    ? (fetching === true)
+                                        ? Array.from({ length: 5 }, (_, i) => i + 1).map(idx => (
+                                            <TableRow key={idx}>
+                                                <TableCell flex={2}>
+                                                    <Box display='flex' alignItems='center'>
+                                                        <Skeleton variant='rectangular' width={78} height={52} sx={{ mr: 1.5 }} />
+                                                        <Skeleton variant='text' sx={{ flex: 1, fontSize: '1.25rem', minWidth: 120 }} />
+                                                    </Box>
                                                 </TableCell>
-                                                <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.author}</TableCell>
-                                                <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.debut_year}</TableCell>
-                                                <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                                                    {new Date(Date.parse(row.createdAt)).toLocaleString()}
-                                                </TableCell>
-                                                <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                                                    <Chip
-                                                        size="small"
-                                                        label={row.status === true ? 'Hiển thị' : 'Đã bị ẩn'}
-                                                        color={row.status === true ? 'greenChip' : 'redChip'}
-                                                        sx={{ fontWeight: 600 }}
-                                                    />
-                                                </TableCell> */}
-                                                <TableCell align="center" size="small">
-                                                    <Tooltip title="Chỉnh sửa" arrow>
-                                                        <IconButton
-                                                            color="primary"
-                                                            onClick={() => navigate('/admin/species/edit', { state: row })}
-                                                        >
-                                                            <DriveFileRenameOutlineTwoTone />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                </TableCell>
-                                                <TableCell align="center" size="small">
-                                                    <Tooltip arrow title={row.status === true ? 'Ẩn đối tượng' : 'Hiển thị đối tượng'}>
-                                                        <IconButton
-                                                            color="secondary"
-                                                            onClick={() => handleToggleStatus(row._id, row.status)}
-                                                        >
-                                                            {row.status === true ? (<VisibilityOffTwoTone />) : (<VisibilityTwoTone />)}
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                </TableCell>
-                                                <TableCell align="center" size="small">
-                                                    <Tooltip title="Xóa" arrow>
-                                                        <IconButton color="error" onClick={() => handleDelete(row._id)}>
-                                                            <DeleteTwoTone />
-                                                        </IconButton>
-                                                    </Tooltip>
+                                                <TableCell><Skeleton variant='text' sx={{ width: '100%', fontSize: '1.25rem' }} /></TableCell>
+                                                <TableCell><Skeleton variant='text' sx={{ width: '100%', fontSize: '1.25rem' }} /></TableCell>
+                                                <TableCell><Skeleton variant='text' sx={{ width: '100%', fontSize: '1.25rem' }} /></TableCell>
+                                                <TableCell><Skeleton variant='text' sx={{ width: '100%', fontSize: '1.25rem' }} /></TableCell>
+                                                <TableCell><Skeleton variant='rounded' sx={{ width: '100%', height: 24, borderRadius: 160 }} /></TableCell>
+                                                <TableCell><Skeleton variant='circular' width={44} height={44} /></TableCell>
+                                                <TableCell><Skeleton variant='circular' width={44} height={44} /></TableCell>
+                                                <TableCell><Skeleton variant='circular' width={44} height={44} /></TableCell>
+                                                <TableCell><Skeleton variant='circular' width={44} height={44} /></TableCell>
+                                            </TableRow>
+                                        ))
+                                        : (
+                                            <TableRow height={64.68 * rowsPerPage} overflow='hidden'>
+                                                <TableCell colSpan={10} padding='none' align='center'>
+                                                    <Box component='img' src={empty} alt='' height={64.68 * rowsPerPage - 2} />
                                                 </TableCell>
                                             </TableRow>
-                                        );
-                                    })}
-                                {emptyRows > 0 && (
-                                    <TableRow style={{ height: 56.68 * emptyRows }}>
-                                        <TableCell colSpan={8} padding='none'/>
+                                        )
+                                    : stableSort(list, getComparator(order, orderBy))
+                                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                        .map((row, idx) => {
+                                            return (
+                                                <TableRow hover key={idx}>
+                                                    <TableCell sx={{ whiteSpace: 'nowrap', py: .75 }}>
+                                                        <Box display='flex' alignItems='center'>
+                                                            <Box className='flex-center' height={52} width={78} mr={1.5}>
+                                                                <Box
+                                                                    component='img' src={row.avatar.fileUrl} alt=''
+                                                                    sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                                />
+                                                            </Box>
+                                                            <Marker mark={searchParam} options={{ className: 'highlighter' }}>
+                                                                {row.short_name}
+                                                            </Marker>
+                                                        </Box>
+                                                    </TableCell>
+                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.genus_ref.sci_name}</TableCell>
+                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                                                        {row.author
+                                                            ? <Box>{row.author}</Box>
+                                                            : <Box color='grey.A400'>Chưa xác định</Box>
+                                                        }
+                                                    </TableCell>
+                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                                                        {row.debut_year
+                                                            ? <Box>{row.debut_year}</Box>
+                                                            : <Box color='grey.A400'>Chưa xác định</Box>
+                                                        }
+                                                    </TableCell>
+                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                                                        {new Date(Date.parse(row.createdAt)).toLocaleString()}
+                                                    </TableCell>
+                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                                                        <Chip
+                                                            size="small"
+                                                            label={row.status === true ? 'Hiển thị' : 'Đã bị ẩn'}
+                                                            color={row.status === true ? 'greenChip' : 'redChip'}
+                                                            sx={{ fontWeight: 600 }}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell align="center" size="small">
+                                                        <Tooltip title="Xem chi tiết" arrow>
+                                                            <span>
+                                                                <IconButton
+                                                                    color="info"
+                                                                    onClick={() => navigate(`/administrator/species/${row._id}`, {
+                                                                        state: { data: row, mode: 'readOnly' }
+                                                                    })}
+                                                                >
+                                                                    <DescriptionTwoTone />
+                                                                </IconButton>
+                                                            </span>
+                                                        </Tooltip>
+                                                    </TableCell>
+                                                    <TableCell align="center" size="small">
+                                                        <Tooltip title="Chỉnh sửa" arrow>
+                                                            <span>
+                                                                <IconButton
+                                                                    color="primary"
+                                                                    onClick={() => navigate(`/administrator/species/edit/${row._id}`, {
+                                                                        state: { data: row, mode: 'edit' }
+                                                                    })}
+                                                                >
+                                                                    <DriveFileRenameOutlineTwoTone />
+                                                                </IconButton>
+                                                            </span>
+                                                        </Tooltip>
+                                                    </TableCell>
+                                                    <TableCell align="center" size="small">
+                                                        <Tooltip arrow title={row.status === true ? 'Ẩn đối tượng' : 'Hiển thị đối tượng'}>
+                                                            <span>
+                                                                <IconButton
+                                                                    color="secondary"
+                                                                    onClick={() => handleToggleStatus(row._id, row.status)}
+                                                                >
+                                                                    {row.status === true ? (<VisibilityOffTwoTone />) : (<VisibilityTwoTone />)}
+                                                                </IconButton>
+                                                            </span>
+                                                        </Tooltip>
+                                                    </TableCell>
+                                                    <TableCell align="center" size="small">
+                                                        <Tooltip title="Xóa" arrow>
+                                                            <span>
+                                                                <IconButton color="error" onClick={() => handleDelete(row._id)}>
+                                                                    <DeleteTwoTone />
+                                                                </IconButton>
+                                                            </span>
+                                                        </Tooltip>
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })
+                                }
+                                {(emptyRows > 0 && list.length !== 0) && (
+                                    <TableRow style={{ height: 64.68 * emptyRows }}>
+                                        <TableCell colSpan={10} padding='none'/>
                                     </TableRow>
                                 )}
                             </TableBody>

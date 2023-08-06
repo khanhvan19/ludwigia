@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
@@ -26,6 +26,7 @@ function SearchBar() {
     const [searchGenus, setSearchGenus] = useState([]);
     const [searchSpecies, setSearchSpecies] = useState([]);
     var searchValue = useDebounce(value, 500)
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (!searchValue.trim()) {
@@ -33,15 +34,19 @@ function SearchBar() {
             setSearchSpecies([]);
             return;
         }
-        axiosPublic
-            .get('/genus/search', { params: { q: searchValue } })
-            .then((res) => setSearchGenus(res))
-            .catch((err) => console.log(err));
-        axiosPublic
-            .get('/genus/search', { params: { q: searchValue } })
-            .then((res) => setSearchSpecies(res))
-            .catch((err) => console.log(err));
-    }, [searchValue])
+
+        const searchGenus = axiosPublic
+            .get('/genus/search', { params: { q: searchValue } });
+        const searchSpecies = axiosPublic
+            .get('/species/search', { params: { q: searchValue } });
+
+        Promise.all([searchGenus, searchSpecies])
+            .then(res => {
+                setSearchGenus(res[0]);
+                setSearchSpecies(res[1]);
+            })
+            .catch(() => navigate('/internal-server-error'));
+    }, [searchValue, navigate])
 
     const handleSearchChange = (e) => {
         const value = e.target.value;
@@ -64,7 +69,7 @@ function SearchBar() {
                 }
                 onChange={handleSearchChange}
             />
-            {searchGenus.length !== 0 && searchSpecies.length != 0 && (
+            {(searchGenus.length !== 0 || searchSpecies.length !== 0) && (
                 <Box
                     className={cx('result-search-container')}
                     sx={{ bgcolor: 'background.paper', boxShadow: 8 }}
@@ -77,7 +82,7 @@ function SearchBar() {
                                     {searchGenus.map((item, idx) => (
                                         <ListItemButton
                                             key={idx} sx={{ fontWeight: 500 }}
-                                            component={Link} to={`/${item.sci_name.toLowerCase()}`}
+                                            component={Link} to={`/genus/${item._id}`}
                                         >
                                             <ListItemIcon
                                                 sx={{
@@ -104,7 +109,7 @@ function SearchBar() {
                                     {searchSpecies.map((item, idx) => (
                                         <ListItemButton
                                             key={idx} sx={{ fontWeight: 500 }}
-                                            component={Link} to={`/${item.sci_name.toLowerCase()}`}
+                                            component={Link} to={`/species/${item._id}`}
                                         >
                                             <ListItemIcon
                                                 sx={{
@@ -117,7 +122,7 @@ function SearchBar() {
                                                 <LocalFloristOutlined />
                                             </ListItemIcon>
                                             <Marker mark={searchValue} options={{ className: 'highlighter' }}>
-                                                {item.sci_name}
+                                                {item.short_name}
                                             </Marker>
                                         </ListItemButton>
                                     ))}

@@ -1,7 +1,11 @@
 /* eslint-disable indent */
 import { Fragment, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
+import mammoth from 'mammoth';
 
 import Stepper from '@mui/material/Stepper';
 import Step from '@mui/material/Step';
@@ -12,10 +16,13 @@ import Dropzone from 'react-dropzone';
 import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
+import Backdrop from '@mui/material/Backdrop'
+import CircularProgress from '@mui/material/CircularProgress';
 
 import Clear from '@mui/icons-material/Clear'
 import DescriptionOutlined from '@mui/icons-material/Description'
 import UploadFileOutlined from '@mui/icons-material/UploadFileOutlined';
+import CloudUploadTwoTone from '@mui/icons-material/CloudUploadTwoTone';
 
 import IntroductionForm from './form/IntroductionForm';
 import DescriptionForm from './form/DescriptionForm';
@@ -25,8 +32,12 @@ import PhytochemicalForm from './form/PhytochemicalForm';
 import BenifitsForm from './form/BenefitsForm';
 import ReferenceForm from './form/ReferenceForm';
 
-import { acceptWordFile } from '~/utils/acceptFileField';
 import { CustomStepConnector, FileFieldWrapper } from '~/components/themeMUI/customComponents';
+import { TOAST_STYLE } from '~/components/ui/customToastify';
+import axiosPublic from '~/utils/axiosPublic';
+import { acceptWordFile } from '~/utils/acceptFileField';
+import useAxiosPrivate from '~/utils/axiosPrivate';
+import { convertDataSpeciesFile } from '~/utils/convertDataSpeciesFile';
 
 const STEPS = [
     'Giới thiệu',
@@ -38,43 +49,218 @@ const STEPS = [
     'Tài liệu tham khảo'
 ]
 
-function AddEditForm({ initValue, validateSchema, editItemId }) {
+function AddEditForm({ initValue, validateSchema, editItemId, readOnlyMode }) {
+    const axiosPrivate = useAxiosPrivate();
+    const navigate = useNavigate()
     const [activeStep, setActiveStep] = useState(0);
+    const [genusOptions, setGenusOptions] = useState([])
     const [selectFile, setSelectFile] = useState('')
+
+    useEffect(() => {
+        axiosPublic
+            .get('/genus/')
+            .then((res) => {
+                var options = res.map(
+                    ({ _id: value, sci_name: label }) => ({ value, label })
+                );
+                setGenusOptions(options)
+            })
+            .catch(() => navigate('/internal-server-error'));
+    }, [navigate])
 
     const form = useForm({
         defaultValues: initValue,
         resolver: yupResolver(validateSchema)
     })
+    var formState = form.formState;
 
-    useEffect(() => {
-        if (selectFile != null) {
-            form.reset((value) => ({
-                ...value,
-                sci_name: selectFile[0]?.name,
-                author: selectFile[0]?.name,
-                debut_year: selectFile[0]?.size
-            }))
+    const handleSubmit = async (value) => {
+        if (!editItemId) {
+            await handleAddSpecies(value);
+        } else {
+            await handleEditSpecies(value);
         }
-    }, [selectFile, form])
+    }
 
-    const handleSubmit = (value) => {
-        console.log(value);
+    const handleAddSpecies = async (data) => {
+        const { description_images, microsurgerys, phytochemicals, ...restField } = data;
+        var micrImg = [], phytImg = [];
+
+        const micrData = microsurgerys.map(item => {
+            const { image, ...rest } = item
+            micrImg.push(image[0])
+            return { ...rest }
+        })
+
+        const phytData = phytochemicals.map(item => {
+            const { chemical_structure, ...rest } = item
+            phytImg.push(chemical_structure[0])
+            return { ...rest }
+        })
+
+        const formData = new FormData();
+        const uploadData = {
+            ...restField,
+            description_images: description_images.map(img => img[0]),
+            microsurgerys: micrData,
+            microsurgery_images: micrImg,
+            phytochemicals: phytData,
+            phytochemical_images: phytImg
+        };
+        buildFormData(formData, uploadData);
+
+        await axiosPrivate
+            .post('/species/', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            })
+            .then((res) => {
+                Swal.fire({
+                    icon: 'success',
+                    title: res.message,
+                    confirmButtonText: 'Xem danh sách',
+                    showDenyButton: true,
+                    denyButtonColor: '#00695c',
+                    denyButtonText: 'Tiếp tục thêm'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        navigate('/administrator/species')
+                    } else if (result.isDenied) {
+                        form.reset();
+                        setActiveStep(0);
+                    }
+                })
+            })
+            .catch((err) => {
+                if (err.status !== 403) toast.error(err.data.message, TOAST_STYLE)
+            })
+    }
+
+    const handleEditSpecies = async (data) => {
+        const { description_images, microsurgerys, phytochemicals, ...restField } = data;
+        var newImgDesc = [], existImgDesc = [], isFileDesc = []
+        var newImgMicr = [], idxFileMicr = []
+        var newImgPhyt = [], idxFilePhyt = []
+
+        description_images.forEach(img => {
+            if (img[0] instanceof File) {
+                newImgDesc.push(img[0])
+                isFileDesc.push(true)
+            } else {
+                existImgDesc.push(img)
+                isFileDesc.push(false)
+            }
+        })
+
+        const micrData = microsurgerys.map((item, idx) => {
+            const { image, ...rest } = item
+            if (image[0] instanceof File) {
+                newImgMicr.push(image[0])
+                idxFileMicr.push(idx)
+                return { ...rest }
+            } else return item;
+        })
+
+        const phytData = phytochemicals.map((item, idx) => {
+            const { chemical_structure, ...rest } = item
+            if (chemical_structure[0] instanceof File) {
+                newImgPhyt.push(chemical_structure[0])
+                idxFilePhyt.push(idx)
+                return { ...rest }
+            } else return item;
+        })
+
+        const formData = new FormData();
+        const uploadData = {
+            ...restField,
+            description_keep_images: existImgDesc,
+            description_new_images: newImgDesc,
+            description_type_images: isFileDesc,
+            microsurgerys: micrData,
+            microsurgery_new_images: newImgMicr,
+            microsurgery_file_idx: idxFileMicr,
+            phytochemicals: phytData,
+            phytochemical_new_images: newImgPhyt,
+            phytochemical_file_idx: idxFilePhyt
+        };
+        buildFormData(formData, uploadData);
+
+        await axiosPrivate
+            .put(`/species/${editItemId}`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            })
+            .then((res) => {
+                Swal.fire({
+                    icon: 'success',
+                    title: res.message,
+                    confirmButtonText: 'Xem danh sách'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        navigate('/administrator/species')
+                    }
+                })
+            })
+            .catch((err) => {
+                if (err.status !== 403) toast.error(err.data.message, TOAST_STYLE)
+            })
+    }
+
+    function buildFormData(formData, data, parentKey) {
+        if (data == null) data = '';
+        if ((typeof data === 'object') && !(data instanceof File)) {
+            if (Array.isArray(data) && data.every(item => item instanceof File)) {
+                data.forEach(file => {
+                    formData.append(parentKey, file)
+                })
+            } else {
+                Object.keys(data).forEach(key => {
+                    buildFormData(
+                        formData, data[key],
+                        parentKey ? `${parentKey}[${key}]` : key
+                    );
+                });
+            }
+        } else {
+            formData.append(parentKey, data);
+        }
+    }
+
+    const handleSpeciesWordFileChange = async (files) => {
+        const file = files[0];
+        setSelectFile(file)
+        const fileReader = new FileReader();
+        fileReader.onload = function () {
+            mammoth
+                .extractRawText({ arrayBuffer: this.result })
+                .then((result) => {
+                    const speciesData = convertDataSpeciesFile(result.value)
+                    form.reset((value) => ({
+                        ...value,
+                        ...speciesData
+                    }))
+                })
+                .done();
+        };
+        fileReader.readAsArrayBuffer(file)
     }
 
     const renderStepContent = (step) => {
         switch (step) {
-            case 0: return (<IntroductionForm form={form} />);
-            case 1: return (<DescriptionForm form={form} />);
-            case 2: return (<MicrosurgeryForm form={form} />);
-            case 3: return (<DistributionForm form={form} />);
-            case 4: return (<PhytochemicalForm form={form} />);
-            case 5: return (<BenifitsForm form={form} />);
-            case 6: return (<ReferenceForm form={form} />);
+            case 0: return (
+                <IntroductionForm
+                    form={form}
+                    genusOptions={genusOptions}
+                    readOnlyMode={readOnlyMode}
+                />
+            );
+            case 1: return (<DescriptionForm form={form} readOnlyMode={readOnlyMode} />);
+            case 2: return (<MicrosurgeryForm form={form} readOnlyMode={readOnlyMode} />);
+            case 3: return (<DistributionForm form={form} readOnlyMode={readOnlyMode} />);
+            case 4: return (<PhytochemicalForm form={form} readOnlyMode={readOnlyMode} />);
+            case 5: return (<BenifitsForm form={form} readOnlyMode={readOnlyMode} />);
+            case 6: return (<ReferenceForm form={form} readOnlyMode={readOnlyMode} />);
             default: return;
         }
     }
-    console.log(form.formState.errors);
 
     return (
         <Fragment>
@@ -94,35 +280,40 @@ function AddEditForm({ initValue, validateSchema, editItemId }) {
                 </Stepper>
             </Box>
             <form onSubmit={form.handleSubmit(handleSubmit)}>
-                {(activeStep === 0) && (
-                    <Dropzone accept={acceptWordFile} onDrop={(value) => setSelectFile(value)}>
+                {(activeStep === 0 && !readOnlyMode) && (
+                    <Dropzone accept={acceptWordFile} onDrop={handleSpeciesWordFileChange}>
                         {({ getRootProps, getInputProps }) => (
                             <FileFieldWrapper {...getRootProps()} height={80} position='relative' my={3}>
                                 <input {...getInputProps()} />
-                                <Box textAlign='center' visibility={selectFile[0] ? 'hidden' : 'visible'}>
-                                    <UploadFileOutlined fontSize='large' />
-                                    <Typography>Kéo thả hoặc chọn file để lấy nội dung</Typography>
-                                </Box>
-                                {selectFile[0] != null && (
+                                {!(selectFile instanceof File) ? (
+                                    <Box textAlign='center' visibility={selectFile[0] ? 'hidden' : 'visible'}>
+                                        <UploadFileOutlined fontSize='large' />
+                                        <Typography>Kéo thả hoặc chọn file để lấy nội dung</Typography>
+                                    </Box>
+                                ) : (
                                     <Fragment>
-                                        <Tooltip title={selectFile[0].name} followCursor>
+                                        <Tooltip title={selectFile.name} followCursor>
                                             <Box
                                                 className='flex-center' position='absolute' overflow='hidden'
                                                 top={0} left={0} height='100%' width='100%' px={4}
                                             >
                                                 <DescriptionOutlined sx={{ fontSize: 48, mr: 1 }} />
                                                 <Box>
-                                                    <Typography className='text-eclipse one-line'>{selectFile[0].name}</Typography>
-                                                    <Typography variant='body2'>{selectFile[0].size} Byte</Typography>
+                                                    <Typography className='text-eclipse one-line'>{selectFile.name}</Typography>
+                                                    <Typography variant='body2'>{selectFile.size} Byte</Typography>
                                                 </Box>
                                             </Box>
                                         </Tooltip>
-                                        <IconButton
-                                            sx={{ position: 'absolute', top: 0, right: 0 }}
-                                            onClick={() => setSelectFile('')}
-                                        >
-                                            <Clear />
-                                        </IconButton>
+                                        <Tooltip title='Chọn lại file' arrow>
+                                            <span>
+                                                <IconButton
+                                                    sx={{ position: 'absolute', top: 0, right: 0 }}
+                                                    onClick={() => setSelectFile('')}
+                                                >
+                                                    <Clear />
+                                                </IconButton>
+                                            </span>
+                                        </Tooltip>
                                     </Fragment>
                                 )}
                             </FileFieldWrapper>
@@ -152,18 +343,40 @@ function AddEditForm({ initValue, validateSchema, editItemId }) {
                             Tiếp theo
                         </Button>
                     )}
-                    {(activeStep === STEPS.length - 1) && (
+                    {(activeStep === STEPS.length - 1 && !readOnlyMode) && (
                         <Button
                             type='submit'
-                            size='large'
-                            color='primary'
-                            variant='contained'
+                            variant='contained' size='large' color='primary'
+                            disabled={(formState.submitCount !== 0 && !formState.isValid)}
+                            sx={{
+                                '&.Mui-disabled': {
+                                    color: 'primary.contrastText',
+                                    bgcolor: 'primary.main',
+                                    boxShadow: 2,
+                                    opacity: 0.5
+                                }
+                            }}
                         >
-                            Thêm mới
+                            {!editItemId ? 'Thêm mới' : 'Chỉnh sửa'}
                         </Button>
                     )}
                 </Box>
             </form>
+
+            <Backdrop
+                open={formState.isSubmitting}
+                sx={{ zIndex: 9000 }}
+            >
+                <Box position='relative' >
+                    <CircularProgress size={120} thickness={4} />
+                    <Box
+                        className='flex-center' position='absolute'
+                        top={0} bottom={0} left={0} right={0} mb={1}
+                    >
+                        <CloudUploadTwoTone color='primary' sx={{ fontSize: '4rem' }} />
+                    </Box>
+                </Box>
+            </Backdrop>
         </Fragment>
     );
 }

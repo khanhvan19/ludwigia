@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { toast } from 'react-toastify';
@@ -9,13 +10,16 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import LinearProgress from '@mui/material/LinearProgress';
+import VisibilityOffOutlined from '@mui/icons-material/VisibilityOffOutlined'
+import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined'
 
 import useAxiosPrivate from '~/utils/axiosPrivate';
 import InputField from '~/components/ui/inputField/InputField';
 import { TOAST_STYLE } from '~/components/ui/customToastify';
 
-function AddEditForm({ initValue, validateSchema, onCloseDialog, editItemId }) {
+function AddForm({ initValue, validateSchema, onCloseDialog }) {
     const axiosPrivate = useAxiosPrivate();
+    const [showPassword, setShowPassword] = useState(false)
 
     const form = useForm({
         defaultValues: initValue,
@@ -24,16 +28,8 @@ function AddEditForm({ initValue, validateSchema, onCloseDialog, editItemId }) {
     var formState = form.formState;
 
     const handleSubmit = async (value) => {
-        if (!editItemId) {
-            await handleAddGenus(value)
-        } else {
-            await handleEditGenus(value, editItemId)
-        }
-    }
-
-    const handleAddGenus = async (data) => {
         await axiosPrivate
-            .post('/genus/', data)
+            .post('/admin/register', value)
             .then((res) => {
                 form.reset();
                 onCloseDialog();
@@ -44,53 +40,68 @@ function AddEditForm({ initValue, validateSchema, onCloseDialog, editItemId }) {
                 })
             })
             .catch((err) => {
-                if (err.status !== 403) toast.error(err.data.message, TOAST_STYLE)
-            })
-    }
-
-    const handleEditGenus = async (data, id) => {
-        await axiosPrivate
-            .put(`/genus/${id}`, data)
-            .then((res) => {
-                form.reset();
-                onCloseDialog();
-                Swal.fire({
-                    icon: 'success',
-                    title: res.message,
-                    confirmButtonText: 'Xác nhận'
-                })
-            })
-            .catch((err) => {
-                if (err.status !== 403) toast.error(err.data.message, TOAST_STYLE)
+                if (err.status !== 403) {
+                    toast.error(err.data.message, TOAST_STYLE)
+                }
             })
     }
 
     return (
         <Box position='relative'>
-            {(formState.isSubmitting) && (
+            {(formState.isSubmitting === true) && (
                 <Box position='absolute' top={0} left={0} width='100%'>
                     <LinearProgress color="success" sx={{ height: '6px' }} />
                 </Box>
             )}
             <form onSubmit={form.handleSubmit(handleSubmit)}>
                 <DialogTitle fontWeight={700} lineHeight={1.5}>
-                    {editItemId ? 'Chỉnh sửa Chi thực vật' : 'Thêm mới Chi thực vật'}
+                    Thêm mới quản trị viên
                 </DialogTitle>
                 <DialogContent dividers sx={{ py: 3 }}>
                     <Box>
                         <InputField
                             form={form}
-                            name='sci_name'
-                            label='Tên khoa học'
-                            placeholder='Nhập tên khoa học của Chi'
+                            name='name'
+                            label='Họ và tên'
+                            placeholder='Họ và tên quản trị viên'
                         />
                     </Box>
                     <Box mt={3}>
                         <InputField
                             form={form}
-                            name='vie_name'
-                            label='Tên tiếng Việt'
-                            placeholder='Nhập tên tiếng Việt của Chi'
+                            name='email'
+                            label='Email'
+                            placeholder='Email (tài khoản đăng nhập)'
+                        />
+                    </Box>
+                    <Box mt={3}>
+                        <InputField
+                            form={form}
+                            name='password'
+                            label='Mật khẩu'
+                            placeholder='Mật khẩu đăng nhập'
+                            type={showPassword ? 'text' : 'password'}
+                            endActionIcon={showPassword
+                                ? <VisibilityOffOutlined />
+                                : <VisibilityOutlined />
+                            }
+                            endActionFunction={() => setShowPassword((prev) => !prev)}
+                            labelIconColor='primary'
+                        />
+                    </Box>
+                    <Box mt={3}>
+                        <InputField
+                            form={form}
+                            name='confirm_password'
+                            label='Nhập lại mật khẩu'
+                            placeholder='Nhập lại mật khẩu đăng nhập'
+                            type={showPassword ? 'text' : 'password'}
+                            endActionIcon={showPassword
+                                ? <VisibilityOffOutlined />
+                                : <VisibilityOutlined />
+                            }
+                            endActionFunction={() => setShowPassword((prev) => !prev)}
+                            labelIconColor='primary'
                         />
                     </Box>
                 </DialogContent>
@@ -109,7 +120,7 @@ function AddEditForm({ initValue, validateSchema, onCloseDialog, editItemId }) {
                         type='submit' variant='contained' size='large'
                         disabled={formState.isSubmitting}
                     >
-                        {editItemId ? 'Chỉnh sửa' : 'Thêm mới'}
+                        Thêm mới
                     </Button>
                 </DialogActions>
             </form>
@@ -117,4 +128,4 @@ function AddEditForm({ initValue, validateSchema, onCloseDialog, editItemId }) {
     );
 }
 
-export default AddEditForm;
+export default AddForm;

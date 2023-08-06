@@ -19,20 +19,25 @@ function App() {
 
                         <Route element={<ClientLayout />}>
                             <Route path='/introduction' element={<Views.IntroPage />} />
-                            <Route path='/:genus_slug' element={<Views.GenusPage />} />
-                            <Route path='/:genus_slug/:species_slug' element={<Views.SpeciesPage />} />
+                            <Route path='/genus/:id' element={<Views.GenusPage />} />
+                            <Route path='/species/:id' element={<Views.SpeciesPage />} />
                         </Route>
 
                         <Route element={<AdminLayout />}>
-                            <Route path='/admin/' element={<Views.Dashboard />} />
-                            <Route path='/admin/genus' element={<Views.GenusManager />} />
-                            <Route path='/admin/species' element={<Views.SpeciesManager />} />
-                            <Route path='/admin/species/add' element={<Views.AddEditSpecies />} />
-                            <Route path='/admin/species/edit' element={<Views.AddEditSpecies />} />
+                            <Route path='/administrator/' element={<Views.Dashboard />} />
+                            <Route path='/administrator/user' element={<Views.UserManager />} />
+                            <Route path='/administrator/genus' element={<Views.GenusManager />} />
+                            <Route path='/administrator/species' element={<Views.SpeciesManager />} />
+                            <Route path='/administrator/species/:id' element={<Views.AddEditSpecies />} />
+                            <Route path='/administrator/species/add' element={<Views.AddEditSpecies />} />
+                            <Route path='/administrator/species/edit/:id' element={<Views.AddEditSpecies />} />
                         </Route>
 
-                        <Route path='/admin/login' element={<Views.Login />} />
+                        <Route path='/administrator/login' element={<Views.Login />} />
+                        <Route path='/administrator/reset_password/:id/:token' element={<Views.ResetPassword />} />
+                        <Route path='/administrator/reset_password' element={<Views.ResetPassword />} />
 
+                        <Route path='/internal-server-error' element={<Views.Error500 />} />
                         <Route path='*' element={<Views.NotFound />} />
                     </Routes>
                 </BrowserRouter>

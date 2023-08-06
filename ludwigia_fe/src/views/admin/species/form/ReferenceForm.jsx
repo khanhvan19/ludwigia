@@ -4,22 +4,17 @@ import { useFieldArray } from 'react-hook-form';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Unstable_Grid2';
 import Divider from '@mui/material/Divider'
-import IconButton from '@mui/material/IconButton'
-import Tooltip from '@mui/material/Tooltip'
 import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
 
 import AddCircleOutline from '@mui/icons-material/AddCircleOutline';
-import RemoveCircleTwoTone from '@mui/icons-material/RemoveCircleTwoTone'
+import DatasetLinkedOutlined from '@mui/icons-material/DatasetLinkedOutlined';
+import RemoveCircleOutline from '@mui/icons-material/RemoveCircleOutline';
 
-import SelectField from '~/components/ui/inputField/SelectField';
 import InputField from '~/components/ui/inputField/InputField';
+import TextAreaField from '~/components/ui/inputField/textAreaField';
 
-const LANGUAGE_OPTION = [
-    { value: 'en', label: 'Tài liệu tiếng Anh' },
-    { value: 'vi', label: 'Tài liệu tiếng Việt' }
-]
-
-function ReferenceForm({ form }) {
+function ReferenceForm({ form, readOnlyMode }) {
     const referencesForm = useFieldArray({
         name: 'references',
         control: form.control
@@ -29,61 +24,63 @@ function ReferenceForm({ form }) {
         <Box mt={3}>
             {referencesForm.fields.map((field, index) => (
                 <Fragment key={field.id}>
-                    <Grid container spacing={2} mt={index > 0 ? 1 : 0}>
+                    {index >= 0 && (
+                        <Box
+                            my={2} alignItems='center' justifyContent='space-between'
+                            display={referencesForm.fields.length > 1 ? 'flex' : 'none' }
+                        >
+                            <Box display='flex' alignItems='center' color='text.accent1'>
+                                <DatasetLinkedOutlined sx={{ mr: .75 }} />
+                                <Typography fontWeight={600} fontStyle='italic'>
+                                    Tài liệu tham khảo số {index + 1}:
+                                </Typography>
+                            </Box>
+                            {!readOnlyMode && (
+                                <Button
+                                    startIcon={<RemoveCircleOutline />}
+                                    variant='outlined' color='error' size='small'
+                                    onClick={() => referencesForm.remove(index)}
+                                >
+                                    Xóa tài liệu này
+                                </Button>
+                            )}
+                        </Box>
+                    )}
+                    <Grid container spacing={2}>
                         <Grid xs={12}>
                             <InputField
                                 form={form}
-                                name={`references.${index}.content`}
-                                label={`Tài liệu tham khảo số ${index + 1}`}
-                                multiline={true}
+                                name={`references.${index}.link`}
+                                label='URL tài liệu trực tuyến'
+                                readOnly={readOnlyMode}
                             />
                         </Grid>
-                        <Grid xs={12} container>
-                            <Grid flexGrow={1}>
-                                <InputField
-                                    form={form}
-                                    name={`references.${index}.link`}
-                                    label='URL tài liệu trực tuyến'
-                                />
-                            </Grid>
-                            <Grid xs={3}>
-                                <SelectField
-                                    form={form}
-                                    name={`references.${index}.language`}
-                                    options={LANGUAGE_OPTION}
-                                    label='Ngôn ngữ'
-                                />
-                            </Grid>
-                            {index >= 0 && (
-                                <Grid
-                                    alignItems='center' p={0}
-                                    display={referencesForm.fields.length > 1 ? 'flex' : 'none' }
-                                >
-                                    <Tooltip title='Xóa tài liệu tham khảo này' arrow>
-                                        <IconButton
-                                            color='error'
-                                            onClick={() => referencesForm.remove(index)}
-                                        >
-                                            <RemoveCircleTwoTone fontSize='large' />
-                                        </IconButton>
-                                    </Tooltip>
-                                </Grid>
-                            )}
+                        <Grid xs={12}>
+                            <TextAreaField
+                                form={form}
+                                name={`references.${index}.content`}
+                                placeholder='Tên tài liệu tham khảo'
+                                readOnly={readOnlyMode}
+                            />
                         </Grid>
                     </Grid>
                     <Divider sx={{ border: '1px dashed', borderColor: 'divider', my: 2 }} />
                 </Fragment>
             ))}
-            <Box textAlign='center'>
-                <Button
-                    startIcon={<AddCircleOutline />}
-                    variant='contained' size='large'
-                    sx={{ textTransform: 'uppercase' }}
-                    onClick={() => referencesForm.append({ content: '', link: '', language: 'en' })}
-                >
-                    Thêm một tài liệu tham khảo
-                </Button>
-            </Box>
+            {!readOnlyMode && (
+                <Box textAlign='center'>
+                    <Button
+                        startIcon={<AddCircleOutline />}
+                        variant='contained'
+                        onClick={() => {
+                            referencesForm.append({ content: '', link: '' })
+                            form.setFocus(`references.${referencesForm.fields.length}.content`)
+                        }}
+                    >
+                        Thêm tài liệu tham khảo
+                    </Button>
+                </Box>
+            )}
         </Box>
     );
 }

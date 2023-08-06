@@ -7,7 +7,7 @@ import frameImage from '~/assets/images/frame-accent-image.png'
 
 function HeadName({ title, subTitle, image }) {
     return (
-        <Container maxWidth='xl' sx={{ bgcolor: 'background.accent1' }}>
+        <Container maxWidth={false} sx={{ bgcolor: 'background.accent1' }}>
             <Box display='flex' height='120px' py={0.5}>
                 {image && (
                     <PlantImageCard

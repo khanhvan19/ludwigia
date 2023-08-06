@@ -1,4 +1,5 @@
 import Box from '@mui/material/Box';
+import Skeleton from '@mui/material/Skeleton';
 
 function PlantImageCard({ frameImage, dataImage, height }) {
     return (
@@ -11,7 +12,11 @@ function PlantImageCard({ frameImage, dataImage, height }) {
                 overflow: 'hidden'
             }}
         >
-            <Box component='img' src={dataImage} alt='' height='100%' />
+            {dataImage ? (
+                <Box component='img' src={dataImage} alt='' height='100%' />
+            ) : (
+                <Skeleton variant="rectangular" width='100%' height='100%' />
+            )}
             <Box
                 component='img' src={frameImage} alt=''
                 position='absolute' top={0} left={0}

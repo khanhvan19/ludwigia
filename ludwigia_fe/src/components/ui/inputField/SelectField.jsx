@@ -9,7 +9,7 @@ import { getErrValidate } from '~/utils/getErrorValidateFrom';
 function SelectField(props) {
     const {
         form, name, options,
-        label, disabled, placeholder
+        label, disabled, readOnly, placeholder
     } = props;
     const { formState } = form;
 
@@ -36,6 +36,7 @@ function SelectField(props) {
                         </Typography>
                     )}
                     InputProps={{
+                        readOnly: readOnly,
                         sx: {
                             '& input::placeholder': {
                                 fontStyle: 'italic',

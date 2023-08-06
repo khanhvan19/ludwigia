@@ -17,44 +17,44 @@ import Chip from '@mui/material/Chip';
 import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
 import TablePagination from '@mui/material/TablePagination';
+import Avatar from '@mui/material/Avatar'
+import Skeleton from '@mui/material/Skeleton';
 import { Marker } from 'react-mark.js';
-
-import empty from '~/assets/images/empty.png'
-import Search from '@mui/icons-material/Search';
-import PlaylistAdd from '@mui/icons-material/PlaylistAdd';
-import DriveFileRenameOutlineTwoTone from '@mui/icons-material/DriveFileRenameOutlineTwoTone';
-import RouterBreadcrumbs from '~/components/ui/breadcrumbs';
-import Speed from '@mui/icons-material/Speed';
-import DeleteTwoTone from '@mui/icons-material/DeleteTwoTone';
-import VisibilityOffTwoTone from '@mui/icons-material/VisibilityOffTwoTone';
-import VisibilityTwoTone from '@mui/icons-material/VisibilityTwoTone';
-
-
 import Swal from 'sweetalert2';
 import { toast } from 'react-toastify';
 
-import AddEditGenus from './AddEditDialog';
+import Search from '@mui/icons-material/Search';
+import PlaylistAdd from '@mui/icons-material/PlaylistAdd';
+import RouterBreadcrumbs from '~/components/ui/breadcrumbs';
+import Speed from '@mui/icons-material/Speed';
+import DeleteTwoTone from '@mui/icons-material/DeleteTwoTone';
+import LockOpenTwoTone from '@mui/icons-material/LockOpenTwoTone';
+import LockPersonTwoTone from '@mui/icons-material/LockPersonTwoTone';
+
+import empty from '~/assets/images/empty.png'
+import AddUserDialog from './AddDialog';
 import { getComparator, stableSort } from '~/utils/tableSort';
 import { TOAST_STYLE } from '~/components/ui/customToastify';
 import useDebounce from '~/hooks/useDebounce';
 import useAxiosPrivate from '~/utils/axiosPrivate';
-import { Skeleton } from '@mui/material';
+import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router';
 
 const BREADCRUMBS = [
     { label: 'Trang chủ', link: '/administrator/' },
-    { label: 'Chi thực vật', link: '/administrator/genus' }
+    { label: 'Quản trị viên', link: '/administrator/user' }
 ];
 
 const TABLE_HEADER = [
-    { label: 'Tên khoa học', sortBy: 'sci_name' },
-    { label: 'Tên tiếng Việt', sortBy: 'vie_name' },
-    { label: 'Ngày thêm', sortBy: 'createdAt' },
-    { label: 'Số loài', sortBy: 'species' },
+    { label: 'Quản trị viên', sortBy: 'name' },
+    { label: 'Email', sortBy: 'email' },
+    { label: 'Ngày tạo', sortBy: 'createdAt' },
+    { label: 'Loại tài khoản', sortBy: 'root_role' },
     { label: 'Trạng thái', sortBy: 'status' }
 ];
 
-function GenusManager() {
+function UserManager() {
+    const isLogin = useSelector((state) => state.adminAuth.login?.data);
     const [list, setList] = useState([]);
     const [searchValue, setSearchValue] = useState('');
     const [refresh, setRefresh] = useState(0);
@@ -66,7 +66,7 @@ function GenusManager() {
     const [fetching, setFetching] = useState(true)
 
     const dialogRef = useRef();
-    const navigate = useNavigate()
+    const navigate = useNavigate();
 
     const axiosPrivate = useAxiosPrivate()
     const searchParam = useDebounce(searchValue, 500).trim();
@@ -76,7 +76,7 @@ function GenusManager() {
         const controler = new AbortController();
 
         axiosPrivate
-            .get('/genus/admin-search', {
+            .get('/admin/', {
                 params: { q: searchParam }
             })
             .then((res) => {
@@ -89,7 +89,7 @@ function GenusManager() {
             controler.abort();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [refresh, searchParam, navigate]);
+    }, [refresh, searchParam]);
 
     const handleSearchChange = (e) => {
         const value = e.target.value;
@@ -107,14 +107,14 @@ function GenusManager() {
     const handleDelete = (id) => {
         Swal.fire({
             icon: 'question',
-            title: 'Bạn có chắc chắn muốn xóa Chi thực vật này?',
+            title: 'Bạn có chắc muốn xóa Quản trị viên này?',
             confirmButtonText: 'Xác nhận',
             showCancelButton: true,
             cancelButtonText: 'Trở lại'
         }).then((result) => {
             if (result.isConfirmed) {
                 axiosPrivate
-                    .delete(`/genus/${id}`)
+                    .delete(`/admin/${id}`)
                     .then((res) => {
                         toast.success(res.message, TOAST_STYLE);
                         setRefresh((prev) => prev + 1);
@@ -129,14 +129,14 @@ function GenusManager() {
     const handleToggleStatus = (id, status) => {
         Swal.fire({
             icon: 'question',
-            title: `Bạn chắc chắn muốn ${status === true ? 'ẩn' : 'hiển thị'} Chi thực vật này?`,
+            title: `Bạn chắc chắn muốn ${status === true ? 'khóa' : 'mở khóa'} Tài khoản này?`,
             confirmButtonText: 'Xác nhận',
             showCancelButton: true,
             cancelButtonText: 'Trở lại'
         }).then((result) => {
             if (result.isConfirmed) {
                 axiosPrivate
-                    .put(`/genus/toggle-status/${id}`)
+                    .put(`/admin/toggle-status/${id}`)
                     .then((res) => {
                         toast.success(res.message, TOAST_STYLE);
                         setRefresh((prev) => prev + 1);
@@ -153,7 +153,7 @@ function GenusManager() {
             <Box className="flex-between" alignItems="flex-end">
                 <Box>
                     <Typography variant="h5" fontWeight="700" gutterBottom>
-                        Danh sách Chi thực vật
+                        Danh sách Quản trị viên
                     </Typography>
                     <RouterBreadcrumbs
                         prevLink={BREADCRUMBS}
@@ -166,6 +166,7 @@ function GenusManager() {
                         variant="contained"
                         startIcon={<PlaylistAdd />}
                         onClick={() => dialogRef.current.onOpenDialog()}
+                        disabled={isLogin.root_role != true}
                     >
                         Thêm mới
                     </Button>
@@ -175,7 +176,7 @@ function GenusManager() {
                 <TextField
                     fullWidth
                     variant="standard"
-                    placeholder="Tìm kiếm với tên khoa học"
+                    placeholder="Tìm kiếm với tên hoặc email của quản trị viên"
                     InputProps={{
                         startAdornment: (
                             <InputAdornment position="start">
@@ -209,22 +210,26 @@ function GenusManager() {
                                             </TableSortLabel>
                                         </TableCell>
                                     ))}
-                                    <TableCell colSpan={3} align="center">
+                                    <TableCell colSpan={2} align="center">
                                         Hành động
                                     </TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {list.length === 0
+                                {(list.length === 0)
                                     ? fetching
                                         ? Array.from({ length: 5 }, (_, i) => i + 1).map(idx => (
                                             <TableRow key={idx}>
-                                                <TableCell><Skeleton variant='text' sx={{ width: '100%', fontSize: '1.25rem' }} /></TableCell>
+                                                <TableCell>
+                                                    <Box display='flex' alignItems='center'>
+                                                        <Skeleton variant='circular' width={40} height={40} sx={{ mr: 1.5 }} />
+                                                        <Skeleton variant='text' sx={{ flex: 1, fontSize: '1.25rem' }} />
+                                                    </Box>
+                                                </TableCell>
                                                 <TableCell><Skeleton variant='text' sx={{ width: '100%', fontSize: '1.25rem' }} /></TableCell>
                                                 <TableCell><Skeleton variant='text' sx={{ width: '100%', fontSize: '1.25rem' }} /></TableCell>
                                                 <TableCell><Skeleton variant='text' sx={{ width: '100%', fontSize: '1.25rem' }} /></TableCell>
                                                 <TableCell><Skeleton variant='rounded' sx={{ width: '100%', height: 24, borderRadius: 160 }} /></TableCell>
-                                                <TableCell><Skeleton variant='circular' width={44} height={44} /></TableCell>
                                                 <TableCell><Skeleton variant='circular' width={44} height={44} /></TableCell>
                                                 <TableCell><Skeleton variant='circular' width={44} height={44} /></TableCell>
                                             </TableRow>
@@ -241,52 +246,57 @@ function GenusManager() {
                                         .map((row, idx) => {
                                             return (
                                                 <TableRow hover key={idx}>
+                                                    <TableCell sx={{ whiteSpace: 'nowrap', py: .75 }}>
+                                                        <Box display='flex' alignItems='center'>
+                                                            <Avatar
+                                                                src={row?.avatar?.fileUrl || '/'} alt={row.name.toUpperCase()}
+                                                                sx={{ border: '1px solid', borderColor: 'text.accent1', bgcolor: 'text.accent2', mr: 1.5 }}
+                                                            />
+                                                            <Marker mark={searchParam} options={{ className: 'highlighter' }}>
+                                                                {row.name}
+                                                            </Marker>
+                                                        </Box>
+                                                    </TableCell>
                                                     <TableCell sx={{ whiteSpace: 'nowrap' }}>
                                                         <Marker mark={searchParam} options={{ className: 'highlighter' }}>
-                                                            {row.sci_name}
+                                                            {row.email}
                                                         </Marker>
                                                     </TableCell>
-                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.vie_name}</TableCell>
                                                     <TableCell sx={{ whiteSpace: 'nowrap' }}>
                                                         {new Date(Date.parse(row.createdAt)).toLocaleString()}
                                                     </TableCell>
-                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.species} loài</TableCell>
+                                                    <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                                                        {row.root_role == true ? 'Tài khoản gốc' : 'Quản trị viên'}
+                                                    </TableCell>
                                                     <TableCell sx={{ whiteSpace: 'nowrap' }}>
                                                         <Chip
                                                             size="small"
-                                                            label={row.status === true ? 'Hiển thị' : 'Đã bị ẩn'}
+                                                            label={row.status === true ? 'Hoạt động' : 'Đã bị khóa'}
                                                             color={row.status === true ? 'greenChip' : 'redChip'}
                                                             sx={{ fontWeight: 600 }}
                                                         />
                                                     </TableCell>
                                                     <TableCell align="center" size="small">
-                                                        <Tooltip title="Chỉnh sửa" arrow>
-                                                            <span>
-                                                                <IconButton
-                                                                    color="primary"
-                                                                    onClick={() => dialogRef.current.onOpenDialog(row)}
-                                                                >
-                                                                    <DriveFileRenameOutlineTwoTone />
-                                                                </IconButton>
-                                                            </span>
-                                                        </Tooltip>
-                                                    </TableCell>
-                                                    <TableCell align="center" size="small">
-                                                        <Tooltip arrow title={row.status === true ? 'Ẩn đối tượng' : 'Hiển thị đối tượng'}>
+                                                        <Tooltip arrow title={row.status === true ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}>
                                                             <span>
                                                                 <IconButton
                                                                     color="secondary"
                                                                     onClick={() => handleToggleStatus(row._id, row.status)}
+                                                                    disabled={isLogin.root_role != true || row.root_role == true}
                                                                 >
-                                                                    {row.status === true ? (<VisibilityOffTwoTone />) : (<VisibilityTwoTone />)}
+                                                                    {row.status === true ? (<LockPersonTwoTone />) : (<LockOpenTwoTone />)}
                                                                 </IconButton>
                                                             </span>
                                                         </Tooltip>
                                                     </TableCell>
                                                     <TableCell align="center" size="small">
-                                                        <Tooltip title="Xóa" arrow>
+                                                        <Tooltip title="Xóa Quản trị viên" arrow>
                                                             <span>
-                                                                <IconButton color="error" onClick={() => handleDelete(row._id)}>
+                                                                <IconButton
+                                                                    color="error"
+                                                                    onClick={() => handleDelete(row._id)}
+                                                                    disabled={isLogin.root_role != true || row.root_role == true}
+                                                                >
                                                                     <DeleteTwoTone />
                                                                 </IconButton>
                                                             </span>
@@ -298,7 +308,7 @@ function GenusManager() {
                                 }
                                 {(emptyRows > 0 && list.length !== 0 ) && (
                                     <TableRow style={{ height: 56.68 * emptyRows }}>
-                                        <TableCell colSpan={8} padding='none'/>
+                                        <TableCell colSpan={7} padding='none'/>
                                     </TableRow>
                                 )}
                             </TableBody>
@@ -323,7 +333,7 @@ function GenusManager() {
                 </Box>
             </Paper>
 
-            <AddEditGenus
+            <AddUserDialog
                 ref={dialogRef}
                 onRefresh={() => setRefresh(prev => prev + 1)}
             />
@@ -331,4 +341,4 @@ function GenusManager() {
     );
 }
 
-export default GenusManager;
+export default UserManager;

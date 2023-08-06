@@ -13,13 +13,19 @@ import { getErrValidate } from '~/utils/getErrorValidateFrom';
 function InputField(props) {
     const {
         form, name, type,
-        label, disabled, placeholder, multiline,
+        label, disabled, readOnly, placeholder, multiline,
         startLabelIcon, endActionIcon, endActionFunction, labelIconColor
     } = props;
     const { formState } = form;
 
     const splitName = name.split('.');
     const errorValidate = getErrValidate(splitName, formState.errors);
+
+    document.addEventListener('wheel', () => {
+        if (document.activeElement.type === 'number') {
+            document.activeElement.blur();
+        }
+    });
 
     return (
         <Controller
@@ -32,8 +38,9 @@ function InputField(props) {
                     type={type}
                     label={label}
                     disabled={disabled}
-                    placeholder={placeholder}
                     multiline={multiline}
+                    placeholder={placeholder}
+                    value={(field.value != null) ? field.value : ''}
                     error={!!errorValidate}
                     helperText={errorValidate && (
                         <Typography variant='caption' display='flex' alignItems='center'>
@@ -42,6 +49,7 @@ function InputField(props) {
                         </Typography>
                     )}
                     InputProps={{
+                        readOnly: readOnly,
                         startAdornment: startLabelIcon && (
                             <InputAdornment position="start">
                                 <Icon color={errorValidate ? 'error' : labelIconColor}>

@@ -39,62 +39,81 @@ function ImageField(props) {
                     accept={acceptImageFile}
                     onDrop={onChange}
                     disabled={disabled}
+                    multiple={false}
                 >
                     {({ getRootProps, getInputProps }) => (
-                        <FileFieldWrapper
-                            {...getRootProps()}
-                            error={errorValidate}
-                            height={height} width={width} position='relative'
-                        >
-                            <input {...getInputProps()} onBlur={onBlur} />
-                            <Box textAlign='center' visibility={value[0] ? 'hidden' : 'visible'}>
-                                <CloudUploadOutlined sx={{ fontSize: 40 }} />
-                                <Typography fontWeight={600} fontSize={18}>{label}</Typography>
-                                {errorValidate ? (
-                                    <Typography variant='body2' className='flex-center'>
-                                        <ReportOutlined sx={{ fontSize: '1.25em', mr: .5 }} />
-                                        {errorValidate?.message}
-                                    </Typography>
-                                ) : (
-                                    <Fragment>
+                        <Box height={height} width={width} display='flex' flexDirection='column'>
+                            <FileFieldWrapper
+                                {...getRootProps()}
+                                error={errorValidate}
+                                flex={1} position='relative'
+                            >
+                                <input {...getInputProps()} onBlur={onBlur} />
+                                {!value ? (
+                                    <Box textAlign='center'>
+                                        <CloudUploadOutlined sx={{ fontSize: 40 }} />
+                                        <Typography fontWeight={600} fontSize={18}>{label}</Typography>
                                         <Typography variant='body2'>Kéo thả hoặc chọn hình ảnh tải lên</Typography>
                                         <Typography variant='caption' component='div'>
                                             File hợp lệ: .png, .jpg, .jpeg, .webp, .svg, .gif
                                         </Typography>
+                                        <Typography variant='caption' component='div'>
+                                            Dung lượng File tối đa: 5 MB
+                                        </Typography>
+                                    </Box>
+                                ) : (
+                                    <Fragment>
+                                        <Box
+                                            className='flex-center'
+                                            position='absolute' overflow='hidden'
+                                            top={0} left={0} height='100%' width='100%'
+                                        >
+                                            {(Array.isArray(value) && value.every(img => img instanceof File)) ? (
+                                                <Tooltip title={value[0]?.name} followCursor>
+                                                    <Box
+                                                        component='img' alt=''
+                                                        src={URL.createObjectURL(value[0])}
+                                                        width='calc(100% - 4px)' height='calc(100% - 4px)'
+                                                        sx={{ objectFit: 'contain' }}
+                                                    />
+                                                </Tooltip>
+                                            ) : (
+                                                <Box
+                                                    component='img' src={value.fileUrl} alt=''
+                                                    width='calc(100% - 4px)' height='calc(100% - 4px)'
+                                                    sx={{ objectFit: 'contain' }}
+                                                />
+                                            )}
+                                        </Box>
+                                        <Tooltip title='Chọn lại ảnh' arrow>
+                                            <span>
+                                                <IconButton
+                                                    size='small'
+                                                    onClick={handleRemoveFile}
+                                                    sx={{
+                                                        position: 'absolute', top: 0, right: 0,
+                                                        bgcolor: '#ffffff80', backdropFilter: 'blur(8px)',
+                                                        '&:hover': { color: 'error.main', bgcolor: '#ffffff80', backdropFilter: 'blur(8px)' }
+                                                    }}
+                                                >
+                                                    <Clear />
+                                                </IconButton>
+                                            </span>
+                                        </Tooltip>
                                     </Fragment>
                                 )}
-                            </Box>
-
-                            {value[0] != null && (
-                                <Fragment>
-                                    <Box
-                                        className='flex-center'
-                                        position='absolute' overflow='hidden'
-                                        top={0} left={0} height='100%' width='100%'
-                                    >
-                                        {(value[0] instanceof File) ? (
-                                            <Tooltip title={value[0]?.name} followCursor>
-                                                <Box
-                                                    component='img' alt={value[0].name}
-                                                    src={URL.createObjectURL(value[0])}
-                                                    height='calc(100% - 4px)'
-                                                />
-                                            </Tooltip>
-                                        ) : (
-                                            <Box component='img' src={value} alt={value} height='calc(100% - 4px)' />
-                                        )}
-                                    </Box>
-                                    <Tooltip title='Chọn lại ảnh' arrow>
-                                        <IconButton
-                                            sx={{ position: 'absolute', top: 0, right: 0 }}
-                                            onClick={handleRemoveFile}
-                                        >
-                                            <Clear />
-                                        </IconButton>
-                                    </Tooltip>
-                                </Fragment>
+                            </FileFieldWrapper>
+                            {errorValidate && (
+                                <Typography
+                                    variant='caption' color='error.main'
+                                    display='flex' alignItems='center'
+                                    px={1.75} pt={.5}
+                                >
+                                    <ReportOutlined sx={{ fontSize: '1.25em', mr: .5 }} />
+                                    {errorValidate?.message}
+                                </Typography>
                             )}
-                        </FileFieldWrapper>
+                        </Box>
                     )}
                 </Dropzone>
             )}

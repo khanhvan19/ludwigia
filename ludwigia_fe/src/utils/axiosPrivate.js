@@ -41,7 +41,7 @@ const useAxiosPrivate = () => {
                     })
                     .catch((err) => {
                         dispatch(handleAdminLogout()).unwrap()
-                        navigate('/admin/login', { replace: true })
+                        navigate('/administrator/login', { replace: true })
                         Swal.fire({
                             icon: 'error',
                             title: err.message,
